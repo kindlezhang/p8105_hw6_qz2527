@@ -1,0 +1,11 @@
+---
+title: "p8105_hw6_qz2527"
+author: "kindle zhang"
+date: "2023-11-29"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
