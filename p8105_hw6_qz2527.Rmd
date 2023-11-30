@@ -87,7 +87,7 @@ model_results |>
 
 # Problem 2
 
-first, I import the data and 
+first, I import the data and tidy it
 
 ```{r import_the_data}
 weather_df = 
