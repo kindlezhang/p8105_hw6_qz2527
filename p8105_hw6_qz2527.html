@@ -490,7 +490,7 @@ model_results |&gt;
 </div>
 <div id="problem-2" class="section level1">
 <h1>Problem 2</h1>
-<p>first, I import the data and tidy it</p>
+<p>first, I import the data and tidy it.</p>
 <pre class="r"><code>weather_df = 
   rnoaa::meteo_pull_monitors(
     c(&quot;USW00094728&quot;),
@@ -505,6 +505,50 @@ model_results |&gt;
 <pre><code>## using cached file: C:\Users\zhang\AppData\Local/R/cache/R/rnoaa/noaa_ghcnd/USW00094728.dly</code></pre>
 <pre><code>## date created (size, mb): 2023-09-28 10:20:11.695766 (8.541)</code></pre>
 <pre><code>## file min/max dates: 1869-01-01 / 2023-09-30</code></pre>
+<p>make a function to bootstrap first.</p>
+<pre class="r"><code>boot_sample = function(df){
+  sample_frac(df, replace  = TRUE)
+} </code></pre>
+<p>make a multiple linear regression</p>
+<pre class="r"><code>weather_df |&gt; 
+  lm(tmax ~ tmin + prcp, data = _) |&gt; 
+  broom::tidy()</code></pre>
+<pre><code>## # A tibble: 3 × 5
+##   term        estimate std.error statistic   p.value
+##   &lt;chr&gt;          &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+## 1 (Intercept)  8.04      0.230      35.0   4.39e-118
+## 2 tmin         1.01      0.0162     62.7   1.43e-196
+## 3 prcp        -0.00154   0.00210    -0.733 4.64e-  1</code></pre>
+<p>Then, I use the bootstrapping</p>
+<pre class="r"><code>boot_straps = 
+  tibble(strap_number = 1:50) |&gt; 
+  mutate(
+    strap_sample = map(strap_number, \(df) boot_sample(df = weather_df)),
+    models = map(strap_sample,\(df) lm(tmax ~ tmin + prcp, data = df)),
+    results_1 = map(models, broom::tidy),
+    results_2 = map(models, broom::glance)) |&gt; 
+  select(strap_number, starts_with(&quot;results&quot;)) |&gt; 
+  unnest(results_1, results_2)</code></pre>
+<pre><code>## Warning: `unnest()` has a new interface. See `?unnest` for details.
+## ℹ Try `df %&gt;% unnest(c(results_1, results_2))`, with `mutate()` if needed.</code></pre>
+<pre class="r"><code>boot_straps</code></pre>
+<pre><code>## # A tibble: 150 × 18
+##    strap_number term        estimate std.error statistic   p.value r.squared
+##           &lt;int&gt; &lt;chr&gt;          &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+##  1            1 (Intercept)  8.50      0.241       35.3  2.30e-119     0.898
+##  2            1 tmin         0.972     0.0172      56.6  8.29e-182     0.898
+##  3            1 prcp         0.00449   0.00211      2.12 3.46e-  2     0.898
+##  4            2 (Intercept)  7.99      0.207       38.6  2.90e-130     0.928
+##  5            2 tmin         1.02      0.0149      68.4  4.78e-209     0.928
+##  6            2 prcp        -0.00702   0.00198     -3.55 4.35e-  4     0.928
+##  7            3 (Intercept)  8.10      0.209       38.7  7.88e-131     0.925
+##  8            3 tmin         1.03      0.0154      66.9  8.45e-206     0.925
+##  9            3 prcp        -0.00776   0.00177     -4.38 1.58e-  5     0.925
+## 10            4 (Intercept)  8.18      0.202       40.6  9.96e-137     0.931
+## # ℹ 140 more rows
+## # ℹ 11 more variables: adj.r.squared &lt;dbl&gt;, sigma &lt;dbl&gt;, statistic1 &lt;dbl&gt;,
+## #   p.value1 &lt;dbl&gt;, df &lt;dbl&gt;, logLik &lt;dbl&gt;, AIC &lt;dbl&gt;, BIC &lt;dbl&gt;,
+## #   deviance &lt;dbl&gt;, df.residual &lt;int&gt;, nobs &lt;int&gt;</code></pre>
 </div>
 
 

@@ -106,7 +106,7 @@ weather_df =
   select(name, id, everything())
 ```
 
-> make a function to bootstrap first.
+make a function to bootstrap first.
 
 ```{r}
 boot_sample = function(df){
@@ -114,4 +114,28 @@ boot_sample = function(df){
 } 
 ```
 
+make a multiple linear regression
+
+```{r}
+weather_df |> 
+  lm(tmax ~ tmin + prcp, data = _) |> 
+  broom::tidy()
+```
+
+Then, I use the bootstrapping
+
+```{r}
+boot_straps = 
+  tibble(strap_number = 1:50) |> 
+  mutate(
+    strap_sample = map(strap_number, \(df) boot_sample(df = weather_df)),
+    models = map(strap_sample,\(df) lm(tmax ~ tmin + prcp, data = df)),
+    results_1 = map(models, broom::tidy),
+    results_2 = map(models, broom::glance)) |> 
+  select(strap_number, starts_with("results")) |> 
+  unnest(results_1, results_2)
+  
+
+boot_straps
+```
 
