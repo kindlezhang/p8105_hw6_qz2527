@@ -614,6 +614,144 @@ confidence level interval</p>
 </div>
 <div id="problem-3" class="section level1">
 <h1>Problem 3</h1>
+<p>import the data and tidy the data, I drop the variable pnumlbw and
+pnumsga cause all the data is 0, it’s meaningless to be a predictor</p>
+<pre class="r"><code>birth_data =
+  read_csv(&quot;./data_file/birthweight.csv&quot;,
+           na = c(&quot;&quot;, &quot;NA&quot;, &quot;Unknown&quot;)) |&gt;
+  janitor::clean_names() |&gt;
+  mutate(
+    babysex = fct(case_when(
+      ## fct_relevel/reorder/infreq/inseq
+      babysex == 1 ~ &quot;male&quot;,
+      babysex == 2 ~ &quot;female&quot;)),
+    frace = fct(
+      case_when(
+        frace == 1 ~ &quot;White&quot;,
+        frace == 2 ~ &quot;Black&quot;,
+        frace == 3 ~ &quot;Asian&quot;,
+        frace == 4 ~ &quot;Puerto Rican&quot;,
+        frace == 8 ~ &quot;Other&quot;,
+        frace == 9 ~ &quot;Unknown&quot;
+      )
+    ),
+    mrace = fct(
+      case_match(
+        mrace,
+        1 ~ &quot;White&quot;,
+        2 ~ &quot;Black&quot;,
+        3 ~ &quot;Asian&quot;,
+        4 ~ &quot;Puerto Rican&quot;,
+        8 ~ &quot;Other&quot;
+      )
+    ),
+    malform = fct(case_match(malform,
+                             0 ~ &quot;absent&quot;,
+                             1 ~ &quot;present&quot;)),
+  ) |&gt; 
+  select(-pnumlbw, -pnumsga) |&gt; 
+  drop_na()</code></pre>
+<pre><code>## Rows: 4342 Columns: 20
+## ── Column specification ────────────────────────────────────────────────────────
+## Delimiter: &quot;,&quot;
+## dbl (20): babysex, bhead, blength, bwt, delwt, fincome, frace, gaweeks, malf...
+## 
+## ℹ Use `spec()` to retrieve the full column specification for this data.
+## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+<pre class="r"><code>legth_id = 
+  birth_data |&gt; 
+  nrow()
+
+id = c(1: legth_id)
+
+birth_data =
+  birth_data |&gt;
+  mutate(id = id) |&gt;
+  relocate(id, bwt)</code></pre>
+<p>First, I will make a multiple regression with all covariates being
+predictors</p>
+<pre class="r"><code>reg_birth = 
+  birth_data |&gt; 
+  select(-id) |&gt; 
+  lm(bwt ~ ., data = _)
+
+broom::tidy(reg_birth)</code></pre>
+<pre><code>## # A tibble: 23 × 5
+##    term               estimate std.error statistic   p.value
+##    &lt;chr&gt;                 &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;
+##  1 (Intercept)       -6237.      660.      -9.45   5.56e- 21
+##  2 babysexmale         -28.7       8.47    -3.39   7.02e-  4
+##  3 bhead               131.        3.45    37.9    2.16e-271
+##  4 blength              75.0       2.02    37.1    1.75e-261
+##  5 delwt                 4.10      0.395   10.4    5.62e- 25
+##  6 fincome               0.290     0.180    1.61   1.07e-  1
+##  7 fraceBlack           14.3      46.2      0.311  7.56e-  1
+##  8 fraceAsian           21.2      69.3      0.306  7.59e-  1
+##  9 fracePuerto Rican   -47.0      44.7     -1.05   2.93e-  1
+## 10 fraceOther            4.30     74.1      0.0580 9.54e-  1
+## # ℹ 13 more rows</code></pre>
+<p>According to the table, I simply choose several variables with a
+particularly small p-value to be my model’s predictor, which are
+<code>babysex</code>, <code>bhead</code>, <code>blength</code>,
+<code>delwt</code>. Of course my model isn’t the optimal, but it doesn’t
+matter.</p>
+<pre class="r"><code>train_df = sample_n(birth_data, 320)
+test_df = anti_join(birth_data, train_df, by = &quot;id&quot;)
+
+cv_df = 
+  crossv_mc(birth_data, n = 100) 
+
+cv_df |&gt; pull(train) |&gt; nth(1) |&gt; as_tibble()</code></pre>
+<pre><code>## # A tibble: 3,473 × 19
+##       id   bwt babysex bhead blength delwt fincome frace gaweeks malform
+##    &lt;int&gt; &lt;dbl&gt; &lt;fct&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt; &lt;fct&gt;   &lt;dbl&gt; &lt;fct&gt;  
+##  1     1  3629 female     34      51   177      35 White    39.9 absent 
+##  2     2  3062 male       34      48   156      65 Black    25.9 absent 
+##  3     3  3345 female     36      50   148      85 White    39.9 absent 
+##  4     4  3062 male       34      52   157      55 White    40   absent 
+##  5     5  3374 female     34      52   156       5 White    41.6 absent 
+##  6     6  3374 male       33      52   129      55 White    40.7 absent 
+##  7     7  2523 female     33      46   126      96 Black    40.3 absent 
+##  8     8  2778 female     33      49   140       5 White    37.4 absent 
+##  9    10  3459 male       33      50   169      75 Black    40.7 absent 
+## 10    11  3317 female     35      51   130      55 White    43.4 absent 
+## # ℹ 3,463 more rows
+## # ℹ 9 more variables: menarche &lt;dbl&gt;, mheight &lt;dbl&gt;, momage &lt;dbl&gt;, mrace &lt;fct&gt;,
+## #   parity &lt;dbl&gt;, ppbmi &lt;dbl&gt;, ppwt &lt;dbl&gt;, smoken &lt;dbl&gt;, wtgain &lt;dbl&gt;</code></pre>
+<pre class="r"><code>cv_df |&gt; pull(train) |&gt; nth(2) |&gt; as_tibble()</code></pre>
+<pre><code>## # A tibble: 3,473 × 19
+##       id   bwt babysex bhead blength delwt fincome frace gaweeks malform
+##    &lt;int&gt; &lt;dbl&gt; &lt;fct&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt; &lt;fct&gt;   &lt;dbl&gt; &lt;fct&gt;  
+##  1     1  3629 female     34      51   177      35 White    39.9 absent 
+##  2     2  3062 male       34      48   156      65 Black    25.9 absent 
+##  3     3  3345 female     36      50   148      85 White    39.9 absent 
+##  4     4  3062 male       34      52   157      55 White    40   absent 
+##  5     6  3374 male       33      52   129      55 White    40.7 absent 
+##  6     7  2523 female     33      46   126      96 Black    40.3 absent 
+##  7     8  2778 female     33      49   140       5 White    37.4 absent 
+##  8     9  3515 male       36      52   146      85 White    40.3 absent 
+##  9    10  3459 male       33      50   169      75 Black    40.7 absent 
+## 10    12  3459 male       35      51   146      55 White    39.4 absent 
+## # ℹ 3,463 more rows
+## # ℹ 9 more variables: menarche &lt;dbl&gt;, mheight &lt;dbl&gt;, momage &lt;dbl&gt;, mrace &lt;fct&gt;,
+## #   parity &lt;dbl&gt;, ppbmi &lt;dbl&gt;, ppwt &lt;dbl&gt;, smoken &lt;dbl&gt;, wtgain &lt;dbl&gt;</code></pre>
+<pre class="r"><code>cv_df |&gt; pull(test) |&gt; nth(1) |&gt; as_tibble()</code></pre>
+<pre><code>## # A tibble: 869 × 19
+##       id   bwt babysex bhead blength delwt fincome frace gaweeks malform
+##    &lt;int&gt; &lt;dbl&gt; &lt;fct&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt; &lt;fct&gt;   &lt;dbl&gt; &lt;fct&gt;  
+##  1     9  3515 male       36      52   146      85 White    40.3 absent 
+##  2    13  3175 female     35      48   158      75 White    39.7 absent 
+##  3    18  3629 female     36      52   154      65 White    40.3 absent 
+##  4    19  3374 female     35      57   147      45 White    39.6 absent 
+##  5    23  3175 male       34      49   148      96 Black    39.7 absent 
+##  6    26  3175 male       34      63   143      25 White    41.9 absent 
+##  7    34  3827 female     35      51   130      45 White    41.3 absent 
+##  8    35  3799 male       38      53   167      75 White    39.9 absent 
+##  9    40  3345 female     34      54   130      95 White    42.1 absent 
+## 10    44  3175 female     34      51   142      96 White    42.3 absent 
+## # ℹ 859 more rows
+## # ℹ 9 more variables: menarche &lt;dbl&gt;, mheight &lt;dbl&gt;, momage &lt;dbl&gt;, mrace &lt;fct&gt;,
+## #   parity &lt;dbl&gt;, ppbmi &lt;dbl&gt;, ppwt &lt;dbl&gt;, smoken &lt;dbl&gt;, wtgain &lt;dbl&gt;</code></pre>
 </div>
 
 

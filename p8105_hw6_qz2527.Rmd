@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(modelr)
-
+library(mgcv)
 set.seed(1)
 ```
 
@@ -185,4 +185,79 @@ Then we can find the quantile of these two variables under a 95% confidence leve
 
 # Problem 3
 
+import the data and tidy the data, I drop the variable pnumlbw and pnumsga cause all the data is 0, it's meaningless to be a predictor
+
+```{r}
+birth_data =
+  read_csv("./data_file/birthweight.csv",
+           na = c("", "NA", "Unknown")) |>
+  janitor::clean_names() |>
+  mutate(
+    babysex = fct(case_when(
+      ## fct_relevel/reorder/infreq/inseq
+      babysex == 1 ~ "male",
+      babysex == 2 ~ "female")),
+    frace = fct(
+      case_when(
+        frace == 1 ~ "White",
+        frace == 2 ~ "Black",
+        frace == 3 ~ "Asian",
+        frace == 4 ~ "Puerto Rican",
+        frace == 8 ~ "Other",
+        frace == 9 ~ "Unknown"
+      )
+    ),
+    mrace = fct(
+      case_match(
+        mrace,
+        1 ~ "White",
+        2 ~ "Black",
+        3 ~ "Asian",
+        4 ~ "Puerto Rican",
+        8 ~ "Other"
+      )
+    ),
+    malform = fct(case_match(malform,
+                             0 ~ "absent",
+                             1 ~ "present")),
+  ) |> 
+  select(-pnumlbw, -pnumsga) |> 
+  drop_na()
+
+legth_id = 
+  birth_data |> 
+  nrow()
+
+id = c(1: legth_id)
+
+birth_data =
+  birth_data |>
+  mutate(id = id) |>
+  relocate(id, bwt)
+```
+
+First, I will make a multiple regression with all covariates being predictors
+
+```{r}
+reg_birth = 
+  birth_data |> 
+  select(-id) |> 
+  lm(bwt ~ ., data = _)
+
+broom::tidy(reg_birth)
+```
+
+According to the table, I simply choose several variables with a particularly small p-value to be my model's predictor, which are `babysex`, `bhead`, `blength`, `delwt`. Of course my model isn't the optimal, but it doesn't matter.
+
+```{r}
+train_df = sample_n(birth_data, 320)
+test_df = anti_join(birth_data, train_df, by = "id")
+
+cv_df = 
+  crossv_mc(birth_data, n = 100) 
+
+cv_df |> pull(train) |> nth(1) |> as_tibble()
+cv_df |> pull(train) |> nth(2) |> as_tibble()
+cv_df |> pull(test) |> nth(1) |> as_tibble()
+```
 
