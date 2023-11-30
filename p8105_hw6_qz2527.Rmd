@@ -143,7 +143,7 @@ Then, I use the bootstrapping and find the $\hat{r}^2$ and $log(\hat{\beta}_1*\h
 
 ```{r}
 boot_straps = 
-  tibble(strap_number = 1:5000) |> 
+  tibble(strap_number = 1:50) |> 
   mutate(
     strap_sample = map(strap_number, \(df) boot_sample(df = weather_df)),
     models = map(strap_sample,\(df) lm(tmax ~ tmin + prcp, data = df)),
@@ -181,4 +181,8 @@ boot_straps |>
   ) |> 
   knitr::kable()
 ```
+Then we can find the quantile of these two variables under a 95% confidence level interval
+
+# Problem 3
+
 
