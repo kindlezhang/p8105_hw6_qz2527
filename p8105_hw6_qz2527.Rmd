@@ -117,9 +117,26 @@ boot_sample = function(df){
 make a multiple linear regression
 
 ```{r}
-weather_df |> 
-  lm(tmax ~ tmin + prcp, data = _) |> 
-  broom::tidy()
+weather_fit = 
+  weather_df |> 
+    lm(tmax ~ tmin + prcp, data = _) 
+
+weather_fit |> 
+    broom::tidy()
+```
+
+Get the residuals and plot it
+
+```{r}
+weather_df |>
+  modelr::add_residuals(weather_fit) |>
+  ggplot(aes(x = tmin, y = resid)) + 
+  geom_point()
+
+weather_df |>
+  modelr::add_residuals(weather_fit) |>
+  ggplot(aes(x = prcp, y = resid)) + 
+  geom_point()
 ```
 
 Then, I use the bootstrapping
