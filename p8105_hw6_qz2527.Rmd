@@ -249,6 +249,27 @@ broom::tidy(reg_birth)
 
 According to the table, I simply choose several variables with a particularly small p-value to be my model's predictor, which are `babysex`, `bhead`, `blength`, `delwt`. Of course my model isn't the optimal, but it doesn't matter.
 
+Then I get the predictions of birth weight and the residuals, and plota a picture using these two variables
+
+```{r}
+model_fit_1 = 
+  birth_data |> 
+  select(bwt, babysex, bhead, blength, delwt) |> 
+  lm(bwt ~ ., data = _)
+
+birth_data_mymodel = 
+  birth_data |> 
+  select(bwt, babysex, bhead, blength, delwt) |> 
+  modelr::add_predictions(model_fit_1) |> 
+  modelr::add_residuals(model_fit_1)
+  
+birth_data_mymodel |> 
+  ggplot(aes(x = pred, y =resid)) + 
+  geom_point(alpha = .4, size = 2)
+```
+
+according to the picture
+
 ```{r}
 train_df = sample_n(birth_data, 320)
 test_df = anti_join(birth_data, train_df, by = "id")
