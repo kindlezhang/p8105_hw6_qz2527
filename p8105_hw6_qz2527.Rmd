@@ -8,6 +8,9 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(modelr)
+
+set.seed(1)
 ```
 
 # Problem 1
@@ -87,7 +90,7 @@ model_results |>
 
 # Problem 2
 
-first, I import the data and tidy it
+first, I import the data and tidy it.
 
 ```{r import_the_data}
 weather_df = 
@@ -103,9 +106,12 @@ weather_df =
   select(name, id, everything())
 ```
 
+> make a function to bootstrap first.
 
 ```{r}
-
+boot_sample = function(df){
+  sample_frac(df, replace  = TRUE)
+} 
 ```
 
 
