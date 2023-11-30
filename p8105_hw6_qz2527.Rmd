@@ -139,7 +139,7 @@ weather_df |>
   geom_point()
 ```
 
-Then, I use the bootstrapping
+Then, I use the bootstrapping and find the $\hat{r}^2$ and $log(\hat{\beta}_1*\hat{\beta}_2)$
 
 ```{r}
 boot_straps = 
@@ -150,9 +150,18 @@ boot_straps =
     results_1 = map(models, broom::tidy),
     results_2 = map(models, broom::glance)) |> 
   select(strap_number, starts_with("results")) |> 
-  unnest(results_1, results_2)
+  unnest(results_1, results_2) |> 
+  janitor::clean_names() |> 
+  filter(term %in% c("tmin", "prcp")) |> 
+  select(strap_number, term, estimate, adj_r_squared) |> 
+  pivot_wider(
+    names_from = term,
+    values_from = estimate
+  ) |> 
+  rename(tmin_esti = tmin, prcp_esti = prcp) |> 
+  mutate(ln_beta1_beta2 = log(tmin_esti * prcp_esti)) |> 
+  select(strap_number, adj_r_squared, ln_beta1_beta2)
   
-
 boot_straps
 ```
 
