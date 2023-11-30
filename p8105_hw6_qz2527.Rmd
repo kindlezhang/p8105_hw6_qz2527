@@ -165,3 +165,20 @@ boot_straps =
 boot_straps
 ```
 
+Then, identify the 2.5% and 97.5% quantiles to provide a 95% confidence interval for these two variable. 
+
+```{r}
+boot_straps |> 
+  pivot_longer(
+    adj_r_squared : ln_beta1_beta2,
+    names_to = "term", 
+    values_to = "estimate"
+  ) |> 
+  group_by(term) |> 
+  summarise(
+    ci_lower = quantile(estimate, 0.025, na.rm = TRUE),
+    ci_higher = quantile(estimate, 0.975, na.rm = TRUE)
+  ) |> 
+  knitr::kable()
+```
+

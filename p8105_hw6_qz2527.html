@@ -574,6 +574,41 @@ weather_fit |&gt;
 ##  9            9         0.910          -6.21
 ## 10           10         0.939         NaN   
 ## # ℹ 40 more rows</code></pre>
+<p>Then, identify the 2.5% and 97.5% quantiles to provide a 95%
+confidence interval for these two variable.</p>
+<pre class="r"><code>boot_straps |&gt; 
+  pivot_longer(
+    adj_r_squared : ln_beta1_beta2,
+    names_to = &quot;term&quot;, 
+    values_to = &quot;estimate&quot;
+  ) |&gt; 
+  group_by(term) |&gt; 
+  summarise(
+    ci_lower = quantile(estimate, 0.025, na.rm = TRUE),
+    ci_higher = quantile(estimate, 0.975, na.rm = TRUE)
+  ) |&gt; 
+  knitr::kable()</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">term</th>
+<th align="right">ci_lower</th>
+<th align="right">ci_higher</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">adj_r_squared</td>
+<td align="right">0.8898772</td>
+<td align="right">0.9334352</td>
+</tr>
+<tr class="even">
+<td align="left">ln_beta1_beta2</td>
+<td align="right">-9.0293410</td>
+<td align="right">-4.8005998</td>
+</tr>
+</tbody>
+</table>
 </div>
 
 
