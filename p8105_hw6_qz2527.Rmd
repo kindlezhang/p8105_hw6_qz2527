@@ -268,17 +268,22 @@ birth_data_mymodel |>
   geom_point(alpha = .4, size = 2)
 ```
 
-according to the picture
+according to the picture, we can find except some outliers, the general simulation effect is good.
+
+Next, we will use a cross validation to compare my model and other two models' cross-validated prediction error. Therefore, we set 100 train and test groups.
 
 ```{r}
-train_df = sample_n(birth_data, 320)
-test_df = anti_join(birth_data, train_df, by = "id")
-
 cv_df = 
   crossv_mc(birth_data, n = 100) 
 
-cv_df |> pull(train) |> nth(1) |> as_tibble()
-cv_df |> pull(train) |> nth(2) |> as_tibble()
-cv_df |> pull(test) |> nth(1) |> as_tibble()
+cv_df = 
+  cv_df |> 
+  mutate(train = purrr::map(train, as_tibble),
+         test = purrr::map(test, as_tibble))
+```
+
+
+```{r}
+
 ```
 
