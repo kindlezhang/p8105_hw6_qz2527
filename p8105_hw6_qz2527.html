@@ -724,6 +724,17 @@ cv_df =
   cv_df |&gt; 
   mutate(train = purrr::map(train, as_tibble),
          test = purrr::map(test, as_tibble))</code></pre>
+<p>use three different models to make regressions with all groups.</p>
+<pre class="r"><code>cv_df = 
+  cv_df |&gt; 
+  mutate(
+    my_model  = map(train, \(df) lm(bwt ~ babysex + bhead + blength + delwt, data = df)),
+    model_1  = map(train, \(df) lm(bwt ~ blength + gaweeks, data = df)),
+    model_2  = map(train, \(df) lm(bwt ~ bhead + babysex + blength + bhead * babysex + bhead * blength + babysex * blength + bhead * babysex * blength, data = df))) |&gt; 
+  mutate(
+    rmse_mymodel = map2_dbl(my_model, test, \(mod, df) rmse(model = mod, data = df)),
+    rmse_model_1 = map2_dbl(model_1, test, \(mod, df) rmse(model = mod, data = df)),
+    rmse_model_2 = map2_dbl(model_2, test, \(mod, df) rmse(model = mod, data = df)))</code></pre>
 </div>
 
 
