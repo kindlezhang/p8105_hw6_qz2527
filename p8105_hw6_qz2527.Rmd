@@ -300,6 +300,15 @@ cv_df =
 focus in the residual and plot them
 
 ```{r}
-
+cv_df |> 
+  select(starts_with("rmse")) |> 
+  pivot_longer(
+    everything(),
+    names_to = "model", 
+    values_to = "rmse",
+    names_prefix = "rmse_") |> 
+  mutate(model = fct_inorder(model)) |> 
+  ggplot(aes(x = model, y = rmse)) + geom_violin()
 ```
 
+according to the outcome, I find that my model's fitting effect is the best and easy to interpreat than other two methods.
