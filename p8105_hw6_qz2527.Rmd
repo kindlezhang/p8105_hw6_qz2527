@@ -297,4 +297,9 @@ cv_df =
     rmse_model_2 = map2_dbl(model_2, test, \(mod, df) rmse(model = mod, data = df)))
 ```
 
+focus in the residual and plot them
+
+```{r}
+
+```
 
