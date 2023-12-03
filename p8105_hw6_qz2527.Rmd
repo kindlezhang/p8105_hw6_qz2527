@@ -173,6 +173,20 @@ boot_straps =
 boot_straps
 ```
 
+we will plot the estimate's distribution
+
+```{r}
+boot_straps |> 
+  ggplot(aes(x = adj_r_squared)) + 
+  geom_density()
+
+boot_straps |> 
+  ggplot(aes(x = ln_beta1_beta2)) + 
+  geom_density()
+```
+
+we can find that the R squared value is between the 0.88 and 0.94, which means the general smulation effect is perfect.
+
 Then, identify the 2.5% and 97.5% quantiles to provide a 95% confidence interval for these two variable. 
 
 ```{r}
